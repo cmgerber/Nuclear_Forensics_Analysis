@@ -11,6 +11,7 @@ import scipy.cluster.hierarchy as hcluster
 from scipy.cluster import vq
 from scipy.spatial.distance import cdist
 import pandas
+import itertools
 
 
 ver = 2.0
@@ -100,14 +101,15 @@ def run_kmeans(data, base_column, ltitles):
 				#codes can be adjusted so they match the previous ones.
 				cent_dist = cdist(center, lcenters, 'euclidean')
 				print 'centers\n', cent_dist
+
+				# for item in cent_dist:
+				# 	ltemp = item.tolist()
+				# 	temp_code.append(ltemp.index(min(ltemp)))
+				# 	del ltemp[:]
+				cart_centers = closest_centers(cent_dist)
+				print 'cart\n', cart_centers
 				sys.exit()
-				for item in cent_dist:
-					ltemp = item.tolist()
-					temp_code.append(ltemp.index(min(ltemp)))
-					del ltemp[:]
-				for num in range(len(cent_dist)):
-					
-				check each combination of centers and find the combination with the lowest average
+
 				#if the two code lists are not the same length then two of the current centers when to the same old center.
 				if len(set(code)) != len(set(temp_code)):
 
@@ -136,6 +138,39 @@ def run_kmeans(data, base_column, ltitles):
 		print 'here'
 		plot_results(total_cluster_array, total_code, current_name, base_column, data)
 	    
+def closest_centers(array):
+	'''This function generates permutations of an array of the distances between the
+	old centers and the new centers where each element is from only one column and row.
+	It then takes the average of each permuatation and returns the codes for the 
+	permutation with the lowest average.'''
+
+	#following code adapted from: http://stackoverflow.com/questions/19640525/in-python-how-do-you-generate-permutations-of-an-array-where-you-only-have-one
+	center_combinations = []
+	lowest_average = 100
+	lowest_average_code = []
+	for P in itertools.permutations(range(len(array))):
+		center_combinations.append([array[p][i] for i,p in enumerate(P)])
+
+	for item in center_combinations:
+		temp = sum(item)/len(item)
+		if temp < lowest_average:
+			lowest_average = temp
+			lowest_average_code = item
+
+	print lowest_average_code
+
+	for n in range(len(lowest_average_code)):
+		for k in array:
+			for num in range(len(k)):
+				if lowest_average_code[n] == k[num]:
+					lowest_average_code[n] = num
+	print 'avg', lowest_average, 'item', lowest_average_code
+	make sure the codes are geting assigned to the right centers
+	return center_combinations
+
+
+
+	
 	    
 def get_name(ltitles):
 	'''This functon creates a way to call for a new name.'''

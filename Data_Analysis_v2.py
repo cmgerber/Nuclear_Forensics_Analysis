@@ -12,6 +12,7 @@ from scipy.cluster import vq
 from scipy.spatial.distance import cdist
 import pandas
 import itertools
+from copy import deepcopy
 
 
 ver = 2.0
@@ -106,18 +107,10 @@ def run_kmeans(data, base_column, ltitles):
 				# 	ltemp = item.tolist()
 				# 	temp_code.append(ltemp.index(min(ltemp)))
 				# 	del ltemp[:]
-				cart_centers = closest_centers(cent_dist)
-				print 'cart\n', cart_centers
-				sys.exit()
-
-				#if the two code lists are not the same length then two of the current centers when to the same old center.
-				if len(set(code)) != len(set(temp_code)):
-
-					raise Exception('When matching Kmeans codes between burnups at least two centers matched to a single previous center.')
+				temp_code = closest_centers(cent_dist)
+				print 'cart\n', temp_code
+				
 				lcenters = center
-				print 'temp', temp_code
-				print cent_dist
-
 
 			code,distance = vq.vq(cluster_array, center)
 				
@@ -126,11 +119,11 @@ def run_kmeans(data, base_column, ltitles):
 			if counter != 0:
 				
 				print 'before', code
-				for item in range(len(code)):
-					code[item] = temp_code[code[item]]
+				for num in range(len(code)):
+					code[num] = temp_code[code[num]]
 				print 'after', code
-			total_code = np.append(total_code,code)
 
+			total_code = np.append(total_code,code)
 			counter += 1
 		#turns the list of arrays back into a single array.
 		total_cluster_array = np.vstack(ltotal_cluster)
@@ -147,7 +140,7 @@ def closest_centers(array):
 	#following code adapted from: http://stackoverflow.com/questions/19640525/in-python-how-do-you-generate-permutations-of-an-array-where-you-only-have-one
 	center_combinations = []
 	lowest_average = 100
-	lowest_average_code = []
+	lowest_average_list = []
 	for P in itertools.permutations(range(len(array))):
 		center_combinations.append([array[p][i] for i,p in enumerate(P)])
 
@@ -155,18 +148,19 @@ def closest_centers(array):
 		temp = sum(item)/len(item)
 		if temp < lowest_average:
 			lowest_average = temp
-			lowest_average_code = item
+			lowest_average_list = item
 
-	print lowest_average_code
+	lowest_average_code = deepcopy(lowest_average_list)
+	print lowest_average_list
 
-	for n in range(len(lowest_average_code)):
-		for k in array:
-			for num in range(len(k)):
-				if lowest_average_code[n] == k[num]:
-					lowest_average_code[n] = num
+	#converts averages into codes
+	for n in range(len(lowest_average_list)):
+		for k in range(len(array)):
+			for num in range(len(array[k])):
+				if lowest_average_list[n] == array[k][num]:
+					lowest_average_code[k] = num
 	print 'avg', lowest_average, 'item', lowest_average_code
-	make sure the codes are geting assigned to the right centers
-	return center_combinations
+	return lowest_average_code
 
 
 
@@ -201,7 +195,7 @@ def run_hierarchical(data, base_column, ltitles):
 def plot_results(cluster_array, code, item, base_column, data):
 	cluster_points = []
 	colors = ['b', 'r', 'g', 'y', 'o', 'b']
-	print 'setcode', set(code)
+
 	reactor_name = get_reactors(data)
 
 	for label in set(code):

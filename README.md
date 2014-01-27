@@ -37,7 +37,7 @@ TUTORIAL
 If the file is not in your current directory it will prompt you to enter the path to 
 the file you want to analyze.
 
-4.The program will then ask you what ratio you would like to use as the base ratio. This means
+4. The program will then ask you what ratio you would like to use as the base ratio. This means
 that the program will use that ratio for the X-axis for all of your comparisons and graphs.
 
 5. The program will then run the analysis, print a dictionary of the reactor ratio combinations

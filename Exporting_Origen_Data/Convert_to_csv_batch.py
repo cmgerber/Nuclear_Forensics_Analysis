@@ -16,7 +16,9 @@ def convert_to_csv():
 		doutput = dict()
 		filename = str(num)+'.out'
 
-
+		#this is where you target the data you are interested in
+		#change the string target to get different data.
+		
 		for line in infile:
 			if 'nuclide   1.000E-03' in line:			#if the line includes the string 'nuclide   1.000E-03' the loop stops. This sets the placement for getting the wanted string in next section.
 				break

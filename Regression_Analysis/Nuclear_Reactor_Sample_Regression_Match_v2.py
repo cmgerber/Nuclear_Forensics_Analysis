@@ -11,29 +11,29 @@ import pandas
 from copy import deepcopy
 import shapely.geometry as geom
 
-ver = 1.0
+ver = 2.0
 
 def import_data():
     '''This function takes in data from a .csv and stores it in a pandas
     dataframe. The file must be a .xls or xls.'''
 
-    while (True):
-        try:
-            file_name = raw_input('What is the excel file name you would like to use? ')
-            data = pandas.read_excel(file_name, 'Sheet1')
-            test_case = pandas.read_excel(file_name, 'Sheet2')
-            break
-        except Exception as e:
-            print e
-            print 'The file you entered does not exist in the directory.'
-            file_path = raw_input('Please enter the path to your file (or enter "try" to retype the file name): ')
-            if file_path.lower() == 'try':
-                pass
-            else:
-                os.chdir(file_path)
+    # while (True):
+    #     try:
+    #         file_name = raw_input('What is the excel file name you would like to use? ')
+    #         data = pandas.read_excel(file_name, 'Sheet1')
+    #         test_case = pandas.read_excel(file_name, 'Sheet2')
+    #         break
+    #     except Exception as e:
+    #         print e
+    #         print 'The file you entered does not exist in the directory.'
+    #         file_path = raw_input('Please enter the path to your file (or enter "try" to retype the file name): ')
+    #         if file_path.lower() == 'try':
+    #             pass
+    #         else:
+    #             os.chdir(file_path)
 
-    # data = pandas.read_excel('VVER_RBMK_BWR_generated.xlsx', 'Sheet1')
-    # test_case = pandas.read_excel('VVER_RBMK_BWR_generated.xlsx', 'Sheet2')
+    data = pandas.read_excel('VVER_RBMK_BWR_generated.xlsx', 'Sheet1')
+    test_case = pandas.read_excel('VVER_RBMK_BWR_generated.xlsx', 'Sheet2')
     return data, test_case
 
 def run_analysis(data, choice, base_column, ltitles, test_case):
@@ -56,6 +56,16 @@ def regression(data, base_column,ltitles, test_case):
         for i, group in data.groupby('reactor'):
             x = group[base_column]
             y = group[current_name]
+
+            #this checks if there is a (0,0) point in the data, if there is not one
+            #it will append one to the data so that the regression lines have a y intercept
+            #of 0.
+            if 0 not in x and 0 not in y:
+                x.append(0)
+                y.append(0)
+                print zip(x,y)
+                print 'appended'
+            
             reactor_name.append(i)
             new_color = next(color)
 
@@ -65,14 +75,26 @@ def regression(data, base_column,ltitles, test_case):
             line = geom.LineString(coords)
             unknown_samples = zip(test_case[base_column],test_case[current_name])
             point = geom.Point(unknown_samples)
-            print 'distance from %s:' % (i), point.distance(line)
+            
 
-            if current_name not in regression_dist_dict:regression_dist_dict[current_name] = []
-            regression_dist_dict[current_name].append((i, point.distance(line)))
+            
 
             p = np.poly1d(np.polyfit(x,y, 2))            
             print '%s: %s vs. %s \n \n \n ' % (i, current_name, base_column), p, '\n \n \n'
             
+            #get the coefficients of the polyfit line 
+            coef = p.c
+
+            #using the coefficients and unknown value calculates the distance from the regression
+            #line to the unknown point.
+            px = unknown_samples[0]; py = unknown_samples[1]; x = 1; a = p.c[1]; b = p.c[0]; c = p.c[2]
+            d = math.sqrt((px-(a*x))**2 + (py-(b*x)**2-2)**2)
+            print 'distance from %s:' % (i), d
+
+            #creates a dictionary containing the distance from the unknown point to all the regression lines
+            if current_name not in regression_dist_dict:regression_dist_dict[current_name] = []
+            regression_dist_dict[current_name].append((i, d))
+
             
             #this creates a graph for each regression
             xp = np.linspace(0, 1.2, 100)

@@ -25,9 +25,8 @@ TUTORIAL
     2. On Sheet1 put all of your known data. 
         1. The first column should be labeled "reactor". Under this put the name of the reactor
         next to every sample.
-        2. The second column should be named "enrichment". You can leave this blank for now.
-        This will be used if you plan on doing other analysis but the column needs to be there
-        for the script to work properly.
+        2. The second column should be named "enrichment". This should contain the enrichment level 
+	of the fuel sample next to every sample.
         3. Each column from 3 on should have the name of the ratio and then the data. The name
         should be formatted like this: pu238/pu239.
     3. On Sheet2 put the unknown sample data. In the first column and each following column you need
@@ -40,6 +39,6 @@ the file you want to analyze.
 4. The program will then ask you what ratio you would like to use as the base ratio. This means
 that the program will use that ratio for the X-axis for all of your comparisons and graphs.
 
-5. The program will then run the analysis, print a dictionary of the reactor ratio combinations
-and their corresponding distance to the unknown sample, and save an image of each graph in the 
-current directory.
+5. The program will then run the analysis, write an excel file containing the reactor enirichment ratio combinations
+and their corresponding distance to the unknown sample along with a sheet of the closest reactor enirichment ratio regression curves, 
+and saves an image of each graph in the current directory.

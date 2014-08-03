@@ -55,6 +55,7 @@ docs/_build/
 # Output
 *.csv
 *.xlsx
+*.png
 
 # ipython notebook
 *.ipynb_checkpoints

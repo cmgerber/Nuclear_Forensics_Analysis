@@ -1,4 +1,4 @@
-Nuclear_Forensics_Cluster_Analysis
+Nuclear_Forensics_Analysis
 ==================================
 
 This Repo contains a Python script and two iPython notebooks for converting output from the ORIGEN code developed by Oak Ridge National Laboratory into a series of .csv files and a summary excel.

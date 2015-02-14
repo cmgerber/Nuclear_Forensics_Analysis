@@ -21,24 +21,25 @@ def import_data():
     '''This function takes in data from a .csv and stores it in a pandas
     dataframe. The file must be a .xls or xls.'''
 
-    # while (True):
-    #     try:
-    #         file_name = raw_input('What is the excel file name you would like to use? ')
-    #         data = pd.read_excel(file_name, 'Sheet1')
-    #         test_case = pd.read_excel(file_name, 'Sheet2')
-    #         break
-    #     except Exception as e:
-    #         print e
-    #         print 'The file you entered does not exist in the directory.'
-    #         file_path = raw_input('Please enter the path to your file (or enter "try" to retype the file name): ')
-    #         if file_path.lower() == 'try':
-    #             pass
-    #         else:
-    #             os.chdir(file_path)
+    while (True):
+        try:
+            file_name = raw_input('What is the baseline data excel file name you would like to use? ')
+            test_data = raw_input('What is the test data excel file name you would like to use? ')
+            data = pd.read_excel(file_name, 'Sheet1')
+            test_case = pd.read_excel(test_data, 'Sheet1')
+            break
+        except Exception as e:
+            print e
+            print 'The file you entered does not exist in the directory.'
+            file_path = raw_input('Please enter the path to your real data file (or enter "try" to retype the file name): ')
+            if file_path.lower() == 'try':
+                pass
+            else:
+                os.chdir(file_path)
 
     #use for easy testing.
-    data = pd.read_excel('VVER_RBMK_BWR_enrichment_generated.xlsx', 'Sheet1')
-    test_case = pd.read_excel('VVER_RBMK_BWR_enrichment_generated.xlsx', 'Sheet2')
+    # data = pd.read_excel('VVER_RBMK_BWR_enrichment_generated.xlsx', 'Sheet1')
+    # test_case = pd.read_excel('VVER_RBMK_BWR_enrichment_generated.xlsx', 'Sheet2')
     return data, test_case
 
 
@@ -252,7 +253,7 @@ def data_analysis():
                 break
             raise
         except Exception:
-            print 'Please enter a differnt name or enter "end".'
+            print 'Please enter a different name or enter "end".'
 
     base_column = str(base_column[0])
     ltitles = data.columns.tolist(); ltitles = ltitles[2:]; ltitles.remove(base_column)

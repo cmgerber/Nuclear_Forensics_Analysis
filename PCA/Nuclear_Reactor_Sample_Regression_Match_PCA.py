@@ -12,6 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from pandas import ExcelWriter
+import scipy.optimize as optimize
 
 ver = 2.0
 
@@ -34,14 +35,16 @@ def regression(data, ltitles, test_case):
     for ix, unknown in test_case.iterrows():
         #update name counter for next sample
         name_counter += 1
+        title_tracker = deepcopy(ltitles)
 
         #iterate through each ratio and compare it to the baseline ratio
-        for current_name in ltitles:
-            ltitles.remove(current_name)
-            if len(ltitles) == 0:
+        for current_name in title_tracker:
+            title_tracker.remove(current_name)
+            if len(title_tracker) == 0:
                 break
-            for base_column in ltitles:
+            for base_column in title_tracker:
                 color = get_color()
+                graph_name = base_column + '/' + current_name
 
                 #set min distance variable for keeping track of the closest curve
                 min_dist = ('temp', 'temp', 1000)
@@ -50,6 +53,7 @@ def regression(data, ltitles, test_case):
                 fig = plt.figure(figsize=(10, 6))
                 ax = fig.add_subplot(111)
 
+                reactor_tracker = []
                 for i, group in data.groupby(['reactor', 'enrichment']):
                     #creates list of reactors that have been iterated through
                     if i[0] not in reactor_name:
@@ -61,27 +65,35 @@ def regression(data, ltitles, test_case):
                         new_color = next(color)
                     react_len = len(reactor_name)
 
-                    x = list(group[base_column])
-                    y = list(group[current_name])
-                    unknown_sample = [unknown[base_column], unknown[current_name]]
+                    x = list(group[current_name])
+                    y = list(group[base_column])
+                    unknown_sample = [unknown[current_name], unknown[base_column]]
 
-                    #creates list of unknown samples.
-                    unknown_samples = (unknown[base_column], unknown[current_name])
-
+                    #linespace
+                    xp = np.linspace(min(x), max(x), 100)
                     #creates the regression line
                     #old
                     p = np.poly1d(np.polyfit(x,y, 2))
+
+                    # def mod_quadratic(x, a, b, c):
+                    #     return a*x**2 + b*x + c
+
+                    # # Fit an exponential
+                    # popt, pcov = optimize.curve_fit(mod_quadratic, x, y)
+                    # p= mod_quadratic(xp, *popt)
+                    # a, b, c = popt[0], popt[1], popt[2]
 
                     #Force o y-intercept
                     # x = np.asarray(x)
                     # coeff = np.transpose([x*x, x])
                     # ((a, b), _, _, _) = np.linalg.lstsq(coeff, y)
                     # p = np.poly1d([a, b, 0])
-                    print '%s enrich: %s: %s vs. %s ' % (i[0], i[1], current_name, base_column), p
+                    print '%s enrich: %s: %s vs. %s ' % (i[0], i[1], current_name, base_column)
+                    print p
 
                     #using the coefficients and unknown value calculates the distance from the regression
                     #line to the unknown point.
-                    px = unknown_samples[0]; py = unknown_samples[1]; a = p.c[0]; b = p.c[1]; c = p.c[2]
+                    px = unknown_sample[0]; py = unknown_sample[1]; a = p.c[0]; b = p.c[1]; c = p.c[2]
                     print px, py, a, b, c
 
                     #finds the minimum value of the distance function
@@ -93,37 +105,46 @@ def regression(data, ltitles, test_case):
                     funct_min_y = my_curve(funct_min_x, a, b, c)
 
                     #creates a dictionary containing the distance from the unknown point to all the regression lines
-                    if current_name not in regression_dist_dict:
-                        regression_dist_dict[current_name] = []
-                    regression_dist_dict[current_name].append([i[0], i[1], d])
+                    if graph_name not in regression_dist_dict:
+                        regression_dist_dict[graph_name] = []
+                    regression_dist_dict[graph_name].append([i[0], i[1], d])
 
                     #this creates a graph for each regression
                     #change axis range with np.linespace below
-                    xp = np.linspace(0, 1.2, 100)
-                    ax.plot(x, y, '.', c=new_color, label='%s: %s' % (i[0], i[1]))
+
+                    #ax.plot(x, y, '.', c=new_color, label='%s: %s' % (i[0], i[1]))
+                    if i[0] not in reactor_tracker:
+                        ax.plot(x, y, '.', c=new_color, label='%s' % (i[0]))
+                        reactor_tracker.append(i[0])
+                    else:
+                        ax.plot(x, y, '.', c=new_color)
+
                     ax.plot(xp, p(xp), '-', c=new_color)
+                    #ax.plot(xp, p, '-', c=new_color)
                     #plt.ylim(-.1, .5)
-                    plt.ylabel(current_name); plt.xlabel(base_column)
+                    plt.ylabel(base_column); plt.xlabel(current_name)
 
                     #finds the closest curve for the current pu ratios and
-                    #then plots the unknown point and the curve hlighted in red.
-                    for ratio in regression_dist_dict[current_name]:
+                    #then plots the unknown point and the curve highlighted in red.
+                    for ratio in regression_dist_dict[graph_name]:
                         if ratio[2] < min_dist[2]:
                             min_dist = ratio
                             closest_curve_values = [i[0], i[1], d]
                             line_equation = p
+                            new_line_space = xp
 
-                closest_curve_dict[current_name] = closest_curve_values
+                closest_curve_dict[graph_name] = closest_curve_values
 
                 #plots the unknown sample
-                ax.plot(unknown_sample[0], unknown_sample[1], color=next(color), marker='o', label='Uknown Sample')
+                #ax.plot(unknown_sample[0], unknown_sample[1], color=next(color), marker='o', label='Uknown Sample')
 
                 #plots the closest curve and highlights it by having it red and thicker.
-                ax.plot(xp, line_equation(xp), '-', c='r', lw=3.0, label='%s: %s - closest' % (closest_curve_values[0], closest_curve_values[1]))
+                #ax.plot(new_line_space, line_equation(new_line_space), '-', c='r', lw=3.0, label='%s: %s - closest' % (closest_curve_values[0], closest_curve_values[1]))
+                #ax.plot(new_line_space, line_equation, '-', c='r', lw=3.0, label='%s: %s - closest' % (closest_curve_values[0], closest_curve_values[1]))
 
                 plt.title('%s: %s vs. %s' % (', '.join(map(str, reactor_name)), current_name, base_column))
                 ax.set_position([0.1, 0.1, 0.5, 0.8])
-                ax.legend(loc='center left', bbox_to_anchor=(1.0, 0.5))
+                L = ax.legend(loc='center left', bbox_to_anchor=(1.0, 0.5))
                 #saves the current plot to a temp variable so it can save plot to file after show()
                 temp_plot = plt.gcf()
 
@@ -136,15 +157,14 @@ def regression(data, ltitles, test_case):
                 saveitem = current_name.replace('/', '')
                 savebase_column = base_column.replace('/', '')
                 #saves plot to .png file
-                temp_plot.savefig('%s%s%s_regression_%s.png' % (''.join(map(str, reactor_name)), saveitem, savebase_column, name_add))
-
+                temp_plot.savefig('data/%s%s%s_regression_%s.png' % (''.join(map(str, reactor_name)), saveitem, savebase_column, name_add))
+                asdfs
                 #saving the reactor list for naming of the output
                 reactors = deepcopy(reactor_name)
                 del reactor_name[:]
-            print 'dict', regression_dist_dict
-            print 'closest', closest_curve_dict
-            create_output(regression_dist_dict, closest_curve_dict, reactors, name_add)
-            regression_dist_dict.clear()
+        create_output(regression_dist_dict, closest_curve_dict, reactors, name_add)
+        regression_dist_dict.clear()
+        closest_curve_dict.clear()
 
 
 def my_curve(x, a, b, c):
@@ -183,7 +203,7 @@ def create_output(regression_dist_dict, closest_curve_dict, reactor_name, name_a
     print 'total_results', total_results
     print 'closest_results', closest_results
 
-    file_name = '%s_regression_results_%s.xlsx' % ('_'.join(map(str, reactor_name)), name_add)
+    file_name = 'data/%s_regression_results_%s.xlsx' % ('_'.join(map(str, reactor_name)), name_add)
 
     writer = ExcelWriter(file_name)
 
